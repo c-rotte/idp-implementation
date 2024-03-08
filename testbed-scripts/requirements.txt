@@ -1,0 +1,2 @@
+pypacker==5.4
+discord-webhook

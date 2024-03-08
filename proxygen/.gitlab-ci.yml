@@ -1,0 +1,53 @@
+default:
+  image: debian:bullseye
+  before_script:
+    - chmod +x ./help/install_dependencies.sh && ./help/install_dependencies.sh #> /dev/null 2>&1
+    - chmod +x ./help/create_dummy_certs.sh && ./help/create_dummy_certs.sh #> /dev/null 2>&1
+
+build_job:
+  script:
+    - cd ..
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.lrz.de/netintum/teaching/tumi8-theses/masque-theses/mvfst.git || true
+    - cd mvfst
+    - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.lrz.de/netintum/teaching/tumi8-theses/masque-theses/mvfst.git"
+    - git checkout idp/main
+    - git fetch --all
+    - git reset --hard origin/idp/main
+    - cd .. && cd proxygen
+    - cd proxygen
+    - ./build.sh --no-install-dependencies --with-quic --masque --ci-static --jobs 1
+  stage: build
+  artifacts:
+    untracked: true
+
+test_job:
+  script:
+    - ./proxygen/_build/proxygen/httpserver/tests/MasqueTests
+  stage: test
+  dependencies:
+    - build_job
+
+artifact_job:
+  script:
+    - \cp -rf proxygen/_build/proxygen/httpclient/samples/H3Datagram/proxygen_h3datagram_client masque-client
+    - \cp -rf proxygen/_build/proxygen/httpclient/samples/H3Datagram/proxygen_masque_http_client masque-http-client
+    - \cp -rf proxygen/_build/proxygen/httpserver/proxygen_masque_server masque-server
+    - \cp -rf proxygen/_build/proxygen/httpserver/hq hq-server
+    - ldd masque-client
+    - du -h masque-client
+    - ldd masque-http-client
+    - du -h masque-http-client
+    - ldd masque-server
+    - du -h masque-server
+    - ldd hq-server
+    - du -h hq-server
+  stage: deploy
+  artifacts:
+    name: "$CI_JOB_NAME"
+    paths:
+      - masque-client
+      - masque-http-client
+      - masque-server
+      - hq-server
+  dependencies:
+    - build_job

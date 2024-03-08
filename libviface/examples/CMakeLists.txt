@@ -1,0 +1,8 @@
+add_subdirectory("basic")
+add_subdirectory("dispatch")
+add_subdirectory("signal")
+add_subdirectory("timeout")
+add_subdirectory("libtins")
+add_subdirectory("stats")
+add_subdirectory("threads")
+add_subdirectory("vifaced")
